@@ -1,0 +1,11 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: nbgrader
+spec:
+  storageClassName: “”
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 10Gi
