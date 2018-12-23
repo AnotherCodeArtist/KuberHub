@@ -1,0 +1,196 @@
+proxy:
+   secretToken: "xxxxx"
+
+auth:
+  type: ldap
+  ldap:
+    server:
+      address: 'ldaps://x.x.x.x:xxx'
+    dn:     
+      templates: ['cn={username},ou=IMA16,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local', 'cn={username},ou=IMA,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local', 'CN=kuberhub,CN=Users,DC=technikum,DC=fh-joanneum,DC=local']
+      user:
+        searchBase: 'ou=technikum,dc=technikum,dc=fh-joanneum,dc=local'
+        escape: False
+        attribute: 'sAMAccountName'
+        ssl: True 
+  admin: 
+    users: 
+      - grainerm15
+      - kogelnik15
+      - krassers16 
+
+singleuser:
+   storage:
+       dynamic:
+          storageClass: nfs-client
+
+hub:
+  imagePullPolicy: Always
+  image:
+    name: grainerm/jupyterhub
+    tag: latest
+  extraConfig: |
+    import os
+    import socket
+    import subprocess
+    from jupyterhub.spawner import Spawner
+
+    c.JupyterHub.spawner_class = 'kubespawner.KubeSpawner'
+    c.JupyterHub.cleanup_servers = False
+    
+    def chooseImage(spawner):
+            # teachers = ["kuberhub"]   
+        username = spawner.user.name 
+        userdn = os.environ.get(username)
+        #os.system("echo "+userdn)
+        path_ima = '/tmp/exchange/ima/nbgrader_config.py'
+        path_dat = '/tmp/exchange/dat/nbgrader_config.py'
+        
+        # if('Personal' in userdn and 'IMA' in userdn):
+        if('kuberhub' in userdn):
+            spawner.environment = {
+                'NB_UID' : '2000',
+                'TEACHER_GID' : '200',
+                'CONFIGPATH': path_ima
+            }
+            spawner.image_spec = 'grainerm/teachernotebook:latest'
+        elif('krassers16' in userdn):
+            spawner.environment = {
+                'NB_UID' : '2001',
+                'NB_GID' : '201',
+                'CONFIGPATH': path_ima
+            }
+            spawner.image_spec = 'grainerm/studentnotebook:latest'
+        elif('DAT' in userdn and 'Personal' in userdn):
+        #elif('grainerm15' in userdn):
+            spawner.environment = {
+                'NB_UID': '2000',
+                'TEACHER_GID': '200',
+                'CONFIGPATH': path_dat
+            }
+            spawner.image_spec = 'grainerm/teacher-datascience-notebook:latest'
+            #elif('DAT' in userdn):
+        elif('grainerm15' in userdn):
+            spawner.environment = {
+                'NB_UID': '2001',
+                'NB_GID': '201',
+                'CONFIGPATH': path_dat
+            }
+            spawner.image_spec = 'grainerm/student-datascience-notebook:latest'
+
+    def createProfileList(spawner):
+        username = spawner.user.name
+
+        userdn = os.environ.get(username)
+        #os.system("echo "+userdn)
+        list = []
+       
+        # teachers = ["kuberhub"]
+        #startPath = '/usr/local/bin/start.sh'
+
+        if('IMA16' in userdn):
+          spawner.environment = {
+              'CONFIGPATH' : '/tmp/exchange/ima/nbgrader_config.py'
+              }
+                # os.environ["CONFIGPATH"] = "/tmp/exchange/ima/nbgrader_config.py"
+
+          list = [
+              {
+                'display_name': 'Datascience  Notebook',
+                'default': True,
+                'kubespawner_override': {
+                  'image_spec': 'grainerm/studentnotebook:latest',
+                  #'uid': 0,
+                  #'cmd': startPath
+                }
+              },
+              {
+                'display_name': 'Java Notebook',
+                'kubespawner_override': {
+                  'image_spec': 'fhjima/jupyter_java:latest'
+                }
+              }
+          ]
+        elif('IMA17' in userdn):
+          list = [
+              {
+                'display_name': 'Student Notebook',
+                'default': True,
+                'kubespawner_override': {
+                  'image_spec': 'grainerm/studentnotebook:latest',
+                  #'uid': 0,
+                  #'cmd': startPath
+                }
+              },
+              {
+                'display_name': 'R Notebook',
+                'kubespawner_override': {
+                  'image_spec': 'jupyter/r-notebook:latest'
+                }
+              }
+          ]
+        elif('kuberhub' in userdn):
+          spawner.environment = {
+              'CONFIGPATH' : '/tmp/exchange/dat/nbgrader_config.py'
+            } 
+          list = [
+              {
+                'display_name': 'Teacher Notebook',
+                'default': True,
+                'kubespawner_override': {
+                  'image_spec': 'grainerm/teacher-datascience-notebook:latest'
+                        # 'uid': 0,
+                # 'cmd': startPath
+                 }
+              }
+          ]
+        return list
+
+    c.KubeSpawner.pre_spawn_hook = chooseImage
+
+    c.KubeSpawner.start_timeout = 60 * 3  
+
+    c.KubeSpawner.profile_list = createProfileList
+   
+    c.KubeSpawner.volumes = [
+        {
+          'name': 'nbgrader',
+          'persistentVolumeClaim': {
+             'claimName': 'nbgrader'
+           }
+        },
+        {
+          'name': 'users',
+          'persistentVolumeClaim': {
+             'claimName': 'claim-{username}'
+           }
+        }
+     ]
+    c.KubeSpawner.volume_mounts = [
+        {
+          'mountPath': '/tmp/exchange',
+          'name': 'nbgrader'
+        },
+        {
+          'mountPath': '/home/jovyan/work',
+          'name': 'users'
+        }
+     ]
+    c.KubeSpawner.http_timeout = 120
+    
+    c.KubeSpawner.cmd = ["/usr/local/bin/start.sh"] 
+
+singleuser:  
+  image:
+    pullPolicy: Always
+  lifecycleHooks:
+    postStart:
+      exec: 
+        command:
+          - "bash"
+          - "-c"
+          - sh /tmp/exchange/post_start.sh
+  uid: 0
+  extraEnv:
+    PYTHONPATH: "/opt/conda/bin"
+  
