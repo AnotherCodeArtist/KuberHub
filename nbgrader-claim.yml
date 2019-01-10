@@ -2,6 +2,7 @@ kind: PersistentVolumeClaim
 apiVersion: v1
 metadata:
   name: nbgrader
+  namespace: jhub
 spec:
   storageClassName: ""
   accessModes:
