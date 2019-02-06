@@ -11,5 +11,5 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: /home/kuberhub/nfs/users
-    server: 10.15.198.235
+    server: nfs_share
     readOnly: false
