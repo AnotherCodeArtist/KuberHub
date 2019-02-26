@@ -10,6 +10,6 @@ spec:
     - ReadWriteOnce
   persistentVolumeReclaimPolicy: Retain
   nfs:
-    path: /home/kuberhub/nfs/users
+    path: /home/salho/nfs/users
     server: nfs_share
     readOnly: false
