@@ -118,7 +118,7 @@ hub:
                 'display_name': 'Teacher Notebook',
                 'default': True,
                 'kubespawner_override': {
-                  'image_spec': 'grainerm/teacher-datascience-notebook:latest'
+                  'image_spec': 'grainerm/teacher-datascience-notebook:latest',
                   'cpu_guarantee': 0.5,
                   'cpu_limit': 1,
                   'mem_guarantee': '1G',
@@ -127,7 +127,7 @@ hub:
               }
           ]
           
-          elif('DAT18' in userdn):
+        elif('DAT18' in userdn):
           spawner.environment = {
               'CONFIGPATH' : '/tmp/exchange/dat/nbgrader_config.py'
             } 
@@ -136,7 +136,7 @@ hub:
                 'display_name': 'Teacher Notebook',
                 'default': True,
                 'kubespawner_override': {
-                  'image_spec': 'grainerm/student-datascience-notebook:latest'
+                  'image_spec': 'grainerm/student-datascience-notebook:latest',
                   'cpu_guarantee': 0.5,
                   'cpu_limit': 1,
                   'mem_guarantee': '1G',
