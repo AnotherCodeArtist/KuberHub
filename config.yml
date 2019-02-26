@@ -1,5 +1,8 @@
 proxy:
    secretToken: "token"
+   service:
+     nodePorts:
+       http: 32000
 
 singleuser:
    storage:
