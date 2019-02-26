@@ -85,10 +85,10 @@ hub:
               }
           list = [
               {
-                'display_name': 'Datascience  Notebook',
+                'display_name': 'IMA Teacher Notebook',
                 'default': True,
                 'kubespawner_override': {
-                  'image_spec': 'grainerm/studentnotebook:latest',
+                  'image_spec': 'skogelnik/kuberhub-teacher-image:latest',
                   #'cpu_guarantee': 0.5,
                   #'cpu_limit': 1,
                   #'mem_guarantee': '1G',
@@ -113,14 +113,14 @@ hub:
         #elif('PERSONAL' in userdn):
         elif('kuberhub' in userdn):
           spawner.environment = {
-              'CONFIGPATH' : '/tmp/exchange/dat/nbgrader_config.py'
+              'CONFIGPATH' : '/tmp/exchange/ima/nbgrader_config.py'
             } 
           list = [
               {
                 'display_name': 'Teacher Notebook',
                 'default': True,
                 'kubespawner_override': {
-                  'image_spec': 'grainerm/teachernotebook:latest'
+                  'image_spec': 'skogelnik/kuberhub-student-image:latest'
                   #'cpu_guarantee': 0.5,
                   #'cpu_limit': 1,
                   #'mem_guarantee': '1G',
