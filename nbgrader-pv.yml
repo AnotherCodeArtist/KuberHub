@@ -11,6 +11,6 @@ spec:
     - ReadWriteMany
   persistentVolumeReclaimPolicy: Retain
   nfs:
-    path: /home/kuberhub/nfs/nbgrader
+    path: /home/salho/nfs/nbgrader
     server: nfs_share
     readOnly: false
