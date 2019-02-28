@@ -14,6 +14,10 @@ singleuser:
    storage:
        dynamic:
           storageClass: nfs-client
+         
+prePuller:
+  continuous:
+    enabled: true
 
 auth:
   admin:
@@ -35,7 +39,7 @@ hub:
 
     c.JupyterHub.authenticator_class = 'ldapauthenticator.LDAPAuthenticator'
     c.LDAPAuthenticator.server_address = 'ldaps://ldaps_ip'
-    c.LDAPAuthenticator.bind_dn_template = ['cn={username},ou=IMA16,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local', 'cn={username},ou=IMA,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local', 'CN=kuberhub,CN=Users,DC=technikum,DC=fh-joanneum,DC=local']
+    c.LDAPAuthenticator.bind_dn_template = ['cn={username},ou=IMA16,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local', 'cn={username},ou=IMA,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local', 'cn={username},ou=IMA18,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local']
     c.LDAPAuthenticator.user_search_base = 'ou=technikum,dc=technikum,dc=fh-joanneum,dc=local'
     c.LDAPAuthenticator.user_attribute = 'sAMAccountName'
     c.LDAPAuthenticator.escape_userdn = False
@@ -47,16 +51,21 @@ hub:
         path_ima = '/tmp/exchange/ima/nbgrader_config.py'
         path_dat = '/tmp/exchange/dat/nbgrader_config.py'
         
-        # if('Personal' in userdn and 'IMA' in userdn):
-        if('IMA16' in userdn):
+        if('Personal' in userdn and 'IMA' in userdn):
+            spawner.environment = {
+                'NB_UID' : '2000',
+                'TEACHER_GID' : '200',
+                'CONFIGPATH': path_ima
+            }
+        elif('IMA16' in userdn):
             spawner.environment = {
                 'NB_UID' : '2000',
                 'TEACHER_GID' : '200',
                 'CONFIGPATH': path_ima
             }
             
-        #elif('IMA18' in userdn):
-        elif('kuberhub' in userdn):
+        elif('IMA18' in userdn):
+        #elif('kuberhub' in userdn):
             spawner.environment = {
                 'NB_UID' : '2001',
                 'NB_GID' : '201',
@@ -71,8 +80,7 @@ hub:
                 'CONFIGPATH': path_dat
             }
             
-        #elif('DAT18' in userdn):
-        elif('grainerm15' in userdn):
+        elif('DAT18' in userdn):
             spawner.environment = {
                 'NB_UID': '2001',
                 'NB_GID': '201',
@@ -84,8 +92,7 @@ hub:
         userdn = os.environ.get(username)
         list = []
        
-        #if('Personal' in userdn and 'IMA' in userdn):
-        if('IMA16' in userdn):
+        if('Personal' in userdn and 'IMA' in userdn):
           spawner.environment = {
               'CONFIGPATH' : '/tmp/exchange/ima/nbgrader_config.py'
               }
@@ -102,8 +109,24 @@ hub:
                 }
               }
           ]
-        #elif('IMA18' in userdn):
-        elif('kuberhub' in userdn):
+        elif('IMA16' in userdn):
+          spawner.environment = {
+              'CONFIGPATH' : '/tmp/exchange/ima/nbgrader_config.py'
+              }
+          list = [
+              {
+                'display_name': 'IMA Teacher Notebook',
+                'default': True,
+                'kubespawner_override': {
+                  'image_spec': 'skogelnik/kuberhub-teacher-image:latest',
+                  'cpu_guarantee': 0.5,
+                  'cpu_limit': 1,
+                  'mem_guarantee': '1G',
+                  'mem_limit': '2G',
+                }
+              }
+          ]
+        elif('IMA18' in userdn):
           list = [
               {
                 'display_name': 'IMA Student Notebook',
@@ -117,8 +140,7 @@ hub:
                 }
               }
           ]
-        #elif('PERSONAL' in userdn and 'DAT' in userdn):
-        elif('kuberhub' in userdn):
+        elif('PERSONAL' in userdn and 'DAT' in userdn):
           spawner.environment = {
               'CONFIGPATH' : '/tmp/exchange/dat/nbgrader_config.py'
             } 
