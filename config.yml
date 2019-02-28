@@ -2,7 +2,13 @@ proxy:
    secretToken: "token"
    service:
      nodePorts:
-       http: 32000
+       http: 32050
+       https: 32000
+   https:
+     hosts:
+       - <domain-name>
+     letsencrypt:
+       contactEmail: <contact-email>
 
 singleuser:
    storage:
