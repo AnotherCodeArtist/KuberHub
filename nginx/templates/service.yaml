@@ -1,0 +1,33 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-info
+  labels:
+    app: hub-info
+spec:
+  ports:
+  - name: "http"
+    port: {{ .Values.port | default 80 }}
+    targetPort: {{ .Values.port | default 80 }}
+  selector:
+    app: hub-info
+  type: ClusterIP  
+
+{{ if .Values.external }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: hub-info-external
+  labels:
+    app: hub-info
+spec:
+  ports:
+  - name: "http"
+    port: {{ .Values.port | default 80 }}
+    targetPort: {{ .Values.port | default 80 }}
+    nodePort: 31888
+  type: LoadBalancer
+  selector:
+     app: hub-info
+{{- end }}

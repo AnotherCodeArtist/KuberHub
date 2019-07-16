@@ -1,8 +1,8 @@
 apiVersion: v1
 kind: PersistentVolume
 metadata:
-  name: nbgrader
-  namespace: jhub
+  name: nbgradernew
+  namespace: jhub-8
 spec:
   storageClassName: ""
   capacity:
@@ -12,5 +12,5 @@ spec:
   persistentVolumeReclaimPolicy: Retain
   nfs:
     path: /home/salho/nfs/nbgrader
-    server: nfs_share
+    server: 10.25.2.35
     readOnly: false

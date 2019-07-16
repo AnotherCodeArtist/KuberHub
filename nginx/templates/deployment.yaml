@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx
+spec:
+  selector:
+    matchLabels:
+      app: hub-info
+  replicas: {{ .Values.replicas | default 1}}
+  template:
+    metadata:
+      labels:
+        app: hub-info
+    spec:
+      containers:
+      - image: nginx:{{.Values.imageversion | default "latest"}}
+        name: hubinfo
+        env:
+        - name: NGINX_PORT
+          value: {{.Values.port | default 80 | quote}}
+        ports:
+        - containerPort: {{.Values.port | default 80}}
+          name: "http"
+        volumeMounts:
+        - mountPath: /usr/share/nginx/html
+          name: web-content
+        - mountPath: /etc/nginx/conf.d
+          name: config
+      restartPolicy: Always
+      volumes:
+      - name: web-content
+        configMap:
+          name: web-content
+      - name: config
+        configMap:
+          name: config
