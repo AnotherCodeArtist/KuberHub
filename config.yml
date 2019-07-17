@@ -155,12 +155,12 @@ hub:
                 'display_name': 'Datascience Teacher Notebook',
                 'default': False,
                 'kubespawner_override': {
-                  'image': 'fhjima/data_science_teacher:latest',
+                  'image': 'fhjima/datascience_teacher:latest',
                   'cmd': ['/usr/local/bin/start-notebook.sh'],
                   'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
+                  'cpu_limit': 2.5,
                   'mem_guarantee': '1G',
-                  'mem_limit': '3G',
+                  'mem_limit': '5G',
                   'uid':0,
                   'notebook_dir':'/home/jovyan/work'
                 }
