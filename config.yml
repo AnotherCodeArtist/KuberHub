@@ -123,33 +123,39 @@ hub:
             }
 
       def createProfileList(spawner):
-        info2_teacher =  {
-                'display_name': 'INFO2 Teacher Notebook',
-                'default': True,
-                'kubespawner_override': {
-                  'image': 'skogelnik/kuberhub-teacher-image:latest',
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '3G',
-                }
-              }
-        r_notebook =  {
-                'display_name': 'R Notebook',
-                'default': False,
-                'kubespawner_override': {
-                  'image': 'jupyter/r-notebook:latest',
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '3G',
-                }
-              }
         info2_golang_teacher =  {
                 'display_name': 'INFO2 Golang Teacher Notebook',
                 'default': False,
                 'kubespawner_override': {
                   'image': 'fhjima/golang:latest',
+                  'cmd': ['/usr/local/bin/start-notebook.sh'],
+                  'cpu_guarantee': 0.5,
+                  'cpu_limit': 1.5,
+                  'mem_guarantee': '1G',
+                  'mem_limit': '3G',
+                  'uid':0,
+                  'notebook_dir':'/home/jovyan/work'
+                }
+              }
+        r_teacher =  {
+                'display_name': 'R Teacher Notebook',
+                'default': False,
+                'kubespawner_override': {
+                  'image': 'fhjima/teacher-r-notebook:latest',
+                  'cmd': ['/usr/local/bin/start-notebook.sh'],
+                  'cpu_guarantee': 0.5,
+                  'cpu_limit': 1.5,
+                  'mem_guarantee': '1G',
+                  'mem_limit': '3G',
+                  'uid':0,
+                  'notebook_dir':'/home/jovyan/work'
+                }
+              }
+        datascience_teacher =  {
+                'display_name': 'Datascience Teacher Notebook',
+                'default': False,
+                'kubespawner_override': {
+                  'image': 'fhjima/data_science_teacher:latest',
                   'cmd': ['/usr/local/bin/start-notebook.sh'],
                   'cpu_guarantee': 0.5,
                   'cpu_limit': 1.5,
@@ -183,7 +189,7 @@ hub:
         elif('IMA18' in userdn):
           list = [info2_student]
         elif(username in info2_teachers):
-          list = [info2_teacher, info2_student, info2_golang_teacher,r_notebook]
+          list = [info2_golang_teacher,r_teacher, datascience_teacher]
         elif('kuberhub' in userdn):
           list = [
               {
