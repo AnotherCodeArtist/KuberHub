@@ -137,11 +137,11 @@ hub:
                   'notebook_dir':'/home/jovyan/work'
                 }
               }
-        r_teacher =  {
-                'display_name': 'R Teacher Notebook',
+        datascience_teacher =  {
+                'display_name': 'Datascience Teacher Notebook',
                 'default': False,
                 'kubespawner_override': {
-                  'image': 'fhjima/teacher-r-notebook:latest',
+                  'image': 'fhjima/datascience_teacher:latest',
                   'cmd': ['/usr/local/bin/start-notebook.sh'],
                   'cpu_guarantee': 0.5,
                   'cpu_limit': 1.5,
@@ -151,16 +151,16 @@ hub:
                   'notebook_dir':'/home/jovyan/work'
                 }
               }
-        datascience_teacher =  {
-                'display_name': 'Datascience Teacher Notebook',
+        javascript_teacher =  {
+                'display_name': 'Javascript Teacher Notebook',
                 'default': False,
                 'kubespawner_override': {
-                  'image': 'fhjima/data_science_teacher:latest',
+                  'image': 'fhjima/javascript-teacher-notebook:latest',
                   'cmd': ['/usr/local/bin/start-notebook.sh'],
                   'cpu_guarantee': 0.5,
                   'cpu_limit': 1.5,
                   'mem_guarantee': '1G',
-                  'mem_limit': '3G',
+                  'mem_limit': '1.5G',
                   'uid':0,
                   'notebook_dir':'/home/jovyan/work'
                 }
@@ -189,7 +189,7 @@ hub:
         elif('IMA18' in userdn):
           list = [info2_student]
         elif(username in info2_teachers):
-          list = [info2_golang_teacher,r_teacher, datascience_teacher]
+          list = [info2_golang_teacher, datascience_teacher, javascript_teacher]
         elif('kuberhub' in userdn):
           list = [
               {
