@@ -158,7 +158,7 @@ hub:
                   'image': 'fhjima/javascript-teacher-notebook:latest',
                   'cmd': ['/usr/local/bin/start-notebook.sh'],
                   'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
+                  'cpu_limit': 2.5,
                   'mem_guarantee': '1G',
                   'mem_limit': '1.5G',
                   'uid':0,
