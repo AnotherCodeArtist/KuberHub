@@ -57,6 +57,7 @@ hub:
       c.LDAPAuthenticator.bind_dn_template = [
         'cn={username},ou=IMA16,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'cn={username},ou=IMA18,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
+        'cn={username},ou=IMA19,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'cn={username},ou=IMA,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'cn={username},ou=GEB,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'CN=kuberhub,CN=Users,DC=technikum,DC=fh-joanneum,DC=local'
@@ -65,193 +66,167 @@ hub:
       c.LDAPAuthenticator.user_attribute = 'sAMAccountName'
       c.LDAPAuthenticator.escape_userdn = False
 
-    01-image-selection: |
+    01-set-config: |
       c.KubeSpawner.environment = {'GRANT_SUDO': 'True'}
 
-      def chooseImage(spawner):
-        username = spawner.user.name
-        userdn = os.environ.get(username)
-        url = 'http://hub-info/Accounts_IMA18.json'
-        students = requests.get(url=url).json()
-        get_student = lambda username: list(filter(lambda s: s['username']==username,students))[0]
-        logger.info('USERNAME:', username)
-        logger.info('STUDENTS')
-        logger.info(students)
-        #logger.debug('INFO:', get_student(username))
-        path_ima = '/tmp/exchange/ima/nbgrader_config.py'
-        path_dat = '/tmp/exchange/dat/nbgrader_config.py'
-
-        if('Personal' in userdn and 'IMA' in userdn):
-            spawner.environment = {
-                'NB_UID' : '2000',
-                'TEACHER_GID' : '200',
-                'CONFIGPATH': path_ima
-            }
-        if('IMA16' in userdn):
-            spawner.environment = {
-                'NB_UID' : '2001',
-                'NB_GID' : '201',
-                'CONFIGPATH': path_ima
-            }
-        elif('IMA18' in userdn):
-             spawner.environment = {
-                'NB_UID': '2001',
-                'NB_GID': '201',
-                'CONFIGPATH': f"/tmp/exchange/ima-grp{get_student(username)['group']}/nbgrader_config.py"
+      def parseUserDN(userDN):
+        parts = userDN.split(',')
+        value = lambda kv: kv.split('=')[1]
+        user = {
+          'username': value(parts[0]),
+          'programme': value(parts[1]),
+          'type': value(parts[-7]),
+          'campus': value(parts[-5])
         }
-        elif('kuberhub' in userdn):
-            spawner.environment = {
-                'NB_UID' : '2001',
-                'NB_GID' : '201',
-                'CONFIGPATH': path_ima
-            }
+        try:
+          url = f"http://hub-info/Accounts_{user['programme']}.json"
+          userInfo = requests.get(url=url).json()
+          user['group'] = list(filter(lambda u: u['username'] == user['username'], userInfo))[0]['group']
+        except Exception:
+          user['group'] = 0
+        return user
 
-        elif('DAT' in userdn and 'Personal' in userdn):
-        #elif('grainerm15' in userdn):
-            spawner.environment = {
-                'NB_UID': '2000',
-                'TEACHER_GID': '200',
-                'CONFIGPATH': path_dat
-            }
+      def setConfig(parseUser):
+        def execute(spawner):
+          username = spawner.user.name
+          userdn = os.environ.get(username)
+          user = parseUser(userdn)
+          logger.info('USERNAME:', username)
+          logger.info('User info')
+          logger.info(user)
+          path_ima = '/tmp/exchange/ima/nbgrader_config.py'
+          path_dat = '/tmp/exchange/dat/nbgrader_config.py'
 
-        #elif('DAT18' in userdn):
-        elif('grainerm15' in userdn):
-            spawner.environment = {
-                'NB_UID': '2001',
-                'NB_GID': '201',
-                'CONFIGPATH': path_dat
-            }
+          if(user['type'] == 'Personal' and user['programme'] == 'IMA'):
+              spawner.environment = {
+                  'NB_UID' : '2000',
+                  'TEACHER_GID' : '200',
+                  'CONFIGPATH': path_ima
+              }
+          elif(user['type'] == 'Studenten'):
+               spawner.environment = {
+                  'NB_UID': '2001',
+                  'NB_GID': '201',
+                  'CONFIGPATH': f"/tmp/exchange/{user['programme']}-grp{user['group']}/nbgrader_config.py"
+          }
+          elif('DAT' in userdn and 'Personal' in userdn):
+              spawner.environment = {
+                  'NB_UID': '2000',
+                  'TEACHER_GID': '200',
+                  'CONFIGPATH': path_dat
+              }
+        return execute
 
-      def createProfileList(spawner):
-        info2_golang_teacher =  {
-                'display_name': 'INFO2 Golang Teacher Notebook',
-                'default': False,
-                'kubespawner_override': {
-                  'image': 'fhjima/golang:latest',
-                  'cmd': ['/usr/local/bin/start-notebook.sh'],
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '3G',
-                  'uid':0,
-                  'notebook_dir':'/home/jovyan/work'
-                }
+    02-profiles: |
+      profiles = {
+        'golang_teacher':  {
+              'display_name': 'Golang (Teacher)',
+              'default': False,
+              'kubespawner_override': {
+                'image': 'fhjima/golang:latest',
+                'cmd': ['/usr/local/bin/start-notebook.sh'],
+                'cpu_guarantee': 0.5,
+                'cpu_limit': 1.5,
+                'mem_guarantee': '1G',
+                'mem_limit': '3G',
+                'uid':0,
+                'notebook_dir':'/home/jovyan/work'
               }
-        datascience_teacher =  {
-                'display_name': 'Datascience Teacher Notebook',
-                'default': False,
-                'kubespawner_override': {
-                  'image': 'fhjima/datascience_teacher:latest',
-                  'cmd': ['/usr/local/bin/start-notebook.sh'],
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '3G',
-                  'uid':0,
-                  'notebook_dir':'/home/jovyan/work'
-                }
+            },
+        'datascience_teacher':  {
+              'display_name': 'Datascience (Teacher)',
+              'default': False,
+              'kubespawner_override': {
+                'image': 'fhjima/datascience_teacher:latest',
+                'cmd': ['/usr/local/bin/start-notebook.sh'],
+                'cpu_guarantee': 0.5,
+                'cpu_limit': 1.5,
+                'mem_guarantee': '1G',
+                'mem_limit': '3G',
+                'uid':0,
+                'notebook_dir':'/home/jovyan/work'
               }
-        javascript_teacher =  {
-                'display_name': 'Javascript Teacher Notebook',
-                'default': False,
-                'kubespawner_override': {
-                  'image': 'fhjima/javascript-teacher-notebook:latest',
-                  'cmd': ['/usr/local/bin/start-notebook.sh'],
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 2.5,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '1.5G',
-                  'uid':0,
-                  'notebook_dir':'/home/jovyan/work'
-                }
+            },
+        'javascript_teacher':  {
+              'display_name': 'Javascript (Teacher)',
+              'default': False,
+              'kubespawner_override': {
+                'image': 'fhjima/javascript-teacher-notebook:latest',
+                'cmd': ['/usr/local/bin/start-notebook.sh'],
+                'cpu_guarantee': 0.5,
+                'cpu_limit': 2.5,
+                'mem_guarantee': '1G',
+                'mem_limit': '1.5G',
+                'uid':0,
+                'notebook_dir':'/home/jovyan/work'
               }
-        info2_student = {
-                'display_name': 'IMA/INFO2 Student Notebook',
-                'default': True,
-                'kubespawner_override': {
-                  'image': 'skogelnik/kuberhub-student-image:latest',
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1.5,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '2.8G',
-                }
+            },
+        'javascript_student':  {
+              'display_name': 'Javascript',
+              'default': False,
+              'kubespawner_override': {
+                'image': 'fhjima/javascript-student-notebook:latest',
+                'cmd': ['/usr/local/bin/start-notebook.sh'],
+                'cpu_guarantee': 0.5,
+                'cpu_limit': 2.5,
+                'mem_guarantee': '1G',
+                'mem_limit': '1.5G',
+                'uid':0,
+                'notebook_dir':'/home/jovyan/work'
               }
-        username = spawner.user.name
-        info2_teachers = ["salho"]
-        userdn = os.environ.get(username)
-        list = []
-        #if('Personal' in userdn and 'IMA' in userdn):
-        if('IMA16' in userdn):
-          spawner.environment = {
-              'CONFIGPATH' : '/tmp/exchange/ima/nbgrader_config.py'
+            },
+        'info2_student': {
+              'display_name': 'IMA/INFO2 (Student)',
+              'default': True,
+              'kubespawner_override': {
+                'image': 'skogelnik/kuberhub-student-image:latest',
+                'cpu_guarantee': 0.5,
+                'cpu_limit': 1.5,
+                'mem_guarantee': '1G',
+                'mem_limit': '2.8G',
               }
-          list = [info2_student]
-        elif('IMA18' in userdn):
-          list = [info2_student]
-        elif(username in info2_teachers):
-          list = [info2_golang_teacher, datascience_teacher, javascript_teacher]
-        elif('kuberhub' in userdn):
-          list = [
-              {
-                'display_name': 'IMA Student Notebook',
-                'default': True,
-                'kubespawner_override': {
-                  'image': 'skogelnik/kuberhub-student-image:latest',
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '2G',
-                }
-              }
-          ]
-        #elif('PERSONAL' in userdn and 'DAT' in userdn):
-        elif('kuberhub' in userdn):
-          spawner.environment = {
-              'CONFIGPATH' : '/tmp/exchange/dat/nbgrader_config.py'
             }
-          list = [
-              {
-                'display_name': 'Teacher Notebook',
-                'default': True,
-                'kubespawner_override': {
-                  'image': 'grainerm/teacher-datascience-notebook:latest',
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '2G',
-                 }
-              }
-          ]
+      }
 
-        elif('DAT18' in userdn):
-          spawner.environment = {
-              'CONFIGPATH' : '/tmp/exchange/dat/nbgrader_config.py'
-            }
-          list = [
-              {
-                'display_name': 'Teacher Notebook',
-                'default': True,
-                'kubespawner_override': {
-                  'image': 'grainerm/student-datascience-notebook:latest',
-                  'cpu_guarantee': 0.5,
-                  'cpu_limit': 1,
-                  'mem_guarantee': '1G',
-                  'mem_limit': '2G',
-                 }
-              }
-            ]
-        return list
+    03-profile-list: |
+      def createProfileList(parseUser, images):
+        def execute(spawner):
+          username = spawner.user.name
+          info2_teachers = ["salho"]
+          userdn = os.environ.get(username)
+          user = parseUser(userdn)
+          studentImages = {
+            'IMA18': ['info2_student'],
+            'AIM19': ['javascript_student']
+          }
+          teacherImages = {
+            'IMA': ['javascript_student',
+                    'javascript_teacher',
+                    'datascience_teacher',
+                    'golang_teacher'
+                   ]
+          }
+          logger.info('User info')
+          logger.info(user)
+          profiles = (teacherImages if user['type'] == 'Personal' else studentImages)[user['programme']]
+          logger.info('Profiles')
+          logger.info(profiles)
+          imgs = list(map(lambda p: images[p],profiles))
+          logger.info('User-Images')
+          logger.info(imgs)
+          return imgs
+        return execute
 
-      c.KubeSpawner.pre_spawn_hook = chooseImage
+      c.KubeSpawner.pre_spawn_hook = setConfig(parseUserDN)
 
       c.KubeSpawner.storage_capacity = '100M'
 
       c.KubeSpawner.start_timeout = 60 * 5
 
-      c.KubeSpawner.profile_list = createProfileList
+      c.KubeSpawner.profile_list = createProfileList(parseUserDN, profiles)
 
       c.KubeSpawner.cmd = ['/usr/local/bin/start.sh','jupyter','notebook']
-    02-volumes: |
+    04-volumes: |
       c.KubeSpawner.volumes = [
         {
           'name': 'nbgrader',
@@ -396,6 +371,7 @@ auth:
   admin:
     access: true
     users:
+      - salho
   dummy:
     password:
   ldap:

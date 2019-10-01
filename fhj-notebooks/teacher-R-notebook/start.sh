@@ -50,61 +50,6 @@ echo "Current user id: $(id -u)"
 # Handle special flags if we're root
 if [ $(id -u) == 0 ] ; then
     echo "Running as root!"
-    # # Only attempt to change the jovyan username if it exists
-    # if id jovyan &> /dev/null ; then
-    #     echo "Set username to: $NB_USER"
-    #     usermod -d /home/$NB_USER -l $NB_USER jovyan
-    # fi
-    #
-    # # Handle case where provisioned storage does not have the correct permissions by default
-    # # Ex: default NFS/EFS (no auto-uid/gid)
-    # if [[ "$CHOWN_HOME" == "1" || "$CHOWN_HOME" == 'yes' ]]; then
-    #     echo "Changing ownership of /home/$NB_USER to $NB_UID:$NB_GID with options '${CHOWN_HOME_OPTS}'"
-    #     chown $CHOWN_HOME_OPTS $NB_UID:$NB_GID /home/$NB_USER
-    # fi
-    # if [ ! -z "$CHOWN_EXTRA" ]; then
-    #     for extra_dir in $(echo $CHOWN_EXTRA | tr ',' ' '); do
-    #         echo "Changing ownership of ${extra_dir} to $NB_UID:$NB_GID with options '${CHOWN_EXTRA_OPTS}'"
-    #         chown $CHOWN_EXTRA_OPTS $NB_UID:$NB_GID $extra_dir
-    #     done
-    # fi
-    #
-    # # handle home and working directory if the username changed
-    # if [[ "$NB_USER" != "jovyan" ]]; then
-    #     # changing username, make sure homedir exists
-    #     # (it could be mounted, and we shouldn't create it if it already exists)
-    #     if [[ ! -e "/home/$NB_USER" ]]; then
-    #         echo "Relocating home dir to /home/$NB_USER"
-    #         mv /home/jovyan "/home/$NB_USER"
-    #     fi
-    #     # if workdir is in /home/jovyan, cd to /home/$NB_USER
-    #     if [[ "$PWD/" == "/home/jovyan/"* ]]; then
-    #         newcwd="/home/$NB_USER/${PWD:13}"
-    #         echo "Setting CWD to $newcwd"
-    #         cd "$newcwd"
-    #     fi
-    # fi
-    #
-    # # Change UID of NB_USER to NB_UID if it does not match
-    # if [ "$NB_UID" != $(id -u $NB_USER) ] ; then
-    #     echo "Set $NB_USER UID to: $NB_UID"
-    #     usermod -u $NB_UID $NB_USER
-    # fi
-    #
-    # # Set NB_USER primary gid to NB_GID (after making the group).  Set
-    # # supplementary gids to NB_GID and 100.
-    # if [ "$NB_GID" != $(id -g $NB_USER) ] ; then
-    #     echo "Add $NB_USER to group: $NB_GID"
-    #     groupadd -g $NB_GID -o ${NB_GROUP:-${NB_USER}}
-    #     usermod  -g $NB_GID -aG 100 $NB_USER
-    # fi
-    #
-    # # Enable sudo if requested
-    # if [[ "$GRANT_SUDO" == "1" || "$GRANT_SUDO" == 'yes' ]]; then
-    #     echo "Granting $NB_USER sudo access and appending $CONDA_DIR/bin to sudo PATH"
-    #     echo "$NB_USER ALL=(ALL) NOPASSWD:ALL" > /etc/sudoers.d/notebook
-    # fi
-
     if [ "$NB_UID" != $(id -u $NB_USER) ] ; then
         if [[ ! -z "$TEACHER_GID" ]] ; then
           echo "Creating group teachers with ID $TEACHER_GID"
@@ -123,6 +68,14 @@ if [ $(id -u) == 0 ] ; then
         usermod -a -G $NB_USER_GROUP $JUPYTERHUB_USER
         echo "Setting home directory of user $JUPYTERHUB_USER to /home/jovyan"
         usermod -d /home/jovyan $JUPYTERHUB_USER
+    fi
+
+    if [ -f $CONFIGPATH ]; then
+      home=$(eval echo ~$JUPYTERHUB_USER)
+      echo "Copying $CONFIGPATH to $home"
+      sudo -u $JUPYTERHUB_USER cp $CONFIGPATH $home/.jupyter
+    else
+      echo "WARNING: There is no nbgrader_config ($CONFIGPATH)"  
     fi
 
     if [ ! -z "$GRANT_SUDO" ]; then

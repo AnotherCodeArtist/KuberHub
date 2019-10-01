@@ -46,6 +46,3 @@ RUN wget http://mirrors.ctan.org/macros/latex/contrib/tcolorbox.zip
 RUN rm -fR /usr/share/texlive/texmf-dist/tex/latex/tcolorbox
 RUN unzip tcolorbox.zip -d /usr/share/texlive/texmf-dist/tex/latex
 RUN rm tcolorbox.zip
-#COPY start-notebook.sh /usr/local/bin/
-#COPY start-singleuser.sh /usr/local/bin/
-#COPY start.sh /usr/local/bin
