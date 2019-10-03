@@ -101,7 +101,7 @@ hub:
               spawner.environment = {
                   'NB_UID' : '2000',
                   'TEACHER_GID' : '200',
-                  'CONFIGPATH': path_ima
+                  'CONFIGPATH': f"/tmp/exchange/{user['programme']}/teacher/nbgrader_config.py"
               }
           elif(user['type'] == 'Studenten'):
                spawner.environment = {
@@ -109,12 +109,6 @@ hub:
                   'NB_GID': '201',
                   'CONFIGPATH': f"/tmp/exchange/{user['programme']}-grp{user['group']}/nbgrader_config.py"
           }
-          elif('DAT' in userdn and 'Personal' in userdn):
-              spawner.environment = {
-                  'NB_UID': '2000',
-                  'TEACHER_GID': '200',
-                  'CONFIGPATH': path_dat
-              }
         return execute
 
     02-profiles: |
