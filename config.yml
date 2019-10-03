@@ -57,7 +57,7 @@ hub:
       c.LDAPAuthenticator.bind_dn_template = [
         'cn={username},ou=IMA16,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'cn={username},ou=IMA18,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
-        'cn={username},ou=IMA19,ou=IMA,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
+        'cn={username},ou=AIM19,ou=AIM,OU=Studenten,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'cn={username},ou=IMA,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'cn={username},ou=GEB,OU=Personal,OU=Benutzer,OU=Graz,OU=Technikum,dc=technikum,dc=fh-joanneum,dc=local',
         'CN=kuberhub,CN=Users,DC=technikum,DC=fh-joanneum,DC=local'
